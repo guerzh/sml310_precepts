@@ -10,48 +10,14 @@ from scipy.io import loadmat
 
 
 
-#M = loadmat("mnist_all.mat")
-
-
-
-def get_test(M):
-    batch_xs = np.zeros((0, 28*28))
-    batch_y_s = np.zeros( (0, 10))
-
-    test_k =  ["test"+str(i) for i in range(10)]
-    for k in range(10):
-        batch_xs = np.vstack((batch_xs, ((np.array(M[test_k[k]])[:])/255.)  ))
-        one_hot = np.zeros(10)
-        one_hot[k] = 1
-        batch_y_s = np.vstack((batch_y_s,   np.tile(one_hot, (len(M[test_k[k]]), 1))   ))
-    return batch_xs, batch_y_s
-
-
-def get_train(M):
-    batch_xs = np.zeros((0, 28*28))
-    batch_y_s = np.zeros( (0, 10))
-
-    train_k =  ["train"+str(i) for i in range(10)]
-    for k in range(10):
-        batch_xs = np.vstack((batch_xs, ((np.array(M[train_k[k]])[:])/255.)  ))
-        one_hot = np.zeros(10)
-        one_hot[k] = 1
-        batch_y_s = np.vstack((batch_y_s,   np.tile(one_hot, (len(M[train_k[k]]), 1))   ))
-    return batch_xs, batch_y_s
-
-
-train_x, train_y = get_train(M)
-test_x, test_y = get_test(M)
-
-
 
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
-dat = pd.read_csv("bezdekIris.data", header = None)
+dat = pd.read_csv("https://raw.githubusercontent.com/salesforce/TransmogrifAI/master/helloworld/src/main/resources/IrisDataset/bezdekIris.data", header = None)
 all_x = dat.loc[:, 0:3].to_numpy()
 all_y_raw = dat.loc[:, 4].to_numpy()
 
-le = preprocessing.LabelEncoder()
+le = LabelEncoder()
 le.fit(all_y_raw)
 all_y = le.transform(all_y_raw)
 
@@ -102,10 +68,11 @@ loss_fn = torch.nn.CrossEntropyLoss()
 
 
 learning_rate = 1e-3
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+lam = 0.01
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay = 10)
 for t in range(1000):
     y_pred = model(x)
-    loss = loss_fn(y_pred, y_classes)
+    loss = loss_fn(y_pred, y_classes) #+ lam * (torch.norm(model[0].weight) + torch.norm(model[2].weight))
 
     model.zero_grad()  # Zero out the previous gradient computation
     loss.backward()    # Compute the gradient
